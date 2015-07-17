@@ -62,7 +62,7 @@ push git commits and tags, and push the `.gem` file to [RubyGems].
 
 1. Fork the [project repo].
 2. Create your feature branch (`git checkout -b my-new-feature`).
-3. Make sure tests pass (`rspec` or `rake spec`).
+3. Make sure tests pass (`cucumber` and `rspec`).
 4. Commit your changes (`git commit -am 'Add some feature'`).
 5. Push to the branch (`git push origin my-new-feature`).
 6. Create a new [pull request].

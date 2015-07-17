@@ -2,5 +2,16 @@
 
 require "bundler/setup"
 require "provisional"
+require "gli"
 
-puts "Provisional #{Provisional::VERSION}"
+
+include GLI::App
+subcommand_option_handling :normal
+arguments :strict
+
+
+program_desc "Manage and provision server images"
+version Provisional::VERSION
+
+
+exit run(ARGV)
