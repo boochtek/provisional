@@ -1,0 +1,6 @@
+#!/usr/bin/env ruby
+
+require "bundler/setup"
+require "provisional"
+
+puts "Provisional #{Provisional::VERSION}"
