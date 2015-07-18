@@ -1,0 +1,45 @@
+---
+vps:
+  provider: digital-ocean
+  api_key: <%= ENV["DIGITAL_OCEAN_API_KEY"] %>
+  defaults:
+    region: nyc3
+    disk-size: 20 GB
+    backups: true
+    private_networking: true
+    ipv6: true
+    locked: false
+    ssh_keys: all_ssh_keys
+dns:
+  provider: dnsimple
+  api_key: <%= ENV["DNSIMPLE_API_KEY"] %>
+  domain: <%= ENV["DOMAIN"] %>
+images:
+  base:
+    base-image: debian-8-x64
+  lb:
+    base-image: base
+  app:
+    base-image: base
+  db:
+    base-image: base
+deployments:
+  staging:
+    lb:
+      servers: 1
+      cold-only: true
+    app:
+      servers: 2
+    db:
+      servers: 1
+      cold-only: true
+  www:
+    lb:
+      servers: 2
+      cold-only: true
+    app:
+      servers: 3
+    db:
+      servers: 2
+      cold-only: true
+      disk-size: 40 GB

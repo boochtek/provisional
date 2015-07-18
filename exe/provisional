@@ -14,4 +14,16 @@ program_desc "Manage and provision server images"
 version Provisional::VERSION
 
 
+desc "Configuration file"
+flag [:c, :"config-file"], default_value: Provisional::CONFIG_FILE
+
+
+desc "Create a Provisional config file for your project"
+command :init do |init|
+  init.action do |global_options|
+    Provisional::Init.new(global_options).run
+  end
+end
+
+
 exit run(ARGV)

@@ -1,5 +1,9 @@
 require "provisional/version"
+require "provisional/init"
+
 
 module Provisional
-  # Your code goes here...
+
+  CONFIG_FILE = "config/infrastructure/provisional.yml"
+
 end
