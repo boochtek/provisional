@@ -26,4 +26,15 @@ command :init do |init|
 end
 
 
+desc "Work with server images"
+command :image do |image|
+  image.desc "List images"
+  image.command :list do |image_list|
+    image_list.action do |global_options, options, args|
+      Provisional::ImageList.new(global_options.merge(options)).run
+    end
+  end
+end
+
+
 exit run(ARGV)
