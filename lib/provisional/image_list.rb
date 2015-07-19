@@ -22,7 +22,7 @@ private
   end
 
   def digital_ocean_api_key
-    @digital_ocean_api_key ||= ENV["DIGITAL_OCEAN_API_KEY"] # TODO: Use config file.
+    @digital_ocean_api_key ||= Provisional.config["vps"]["api_key"]
   end
 
   def os_images

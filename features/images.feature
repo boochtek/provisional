@@ -3,6 +3,7 @@ Feature: Managing images
 
 Background:
     Given the environment variable "DIGITAL_OCEAN_API_KEY" is set
+    Given the default config file
 
 
 Scenario: List images
