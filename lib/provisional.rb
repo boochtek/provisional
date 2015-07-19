@@ -14,4 +14,14 @@ module Provisional
     @config ||= YAML.load(ERB.new(File.read(CONFIG_FILE)).result)
   end
 
+  def self.digital_ocean
+    @digital_ocean ||= DropletKit::Client.new(access_token: digital_ocean_api_key)
+  end
+
+private
+
+  def self.digital_ocean_api_key
+    @digital_ocean_api_key ||= Provisional.config["vps"]["api_key"]
+  end
+
 end
