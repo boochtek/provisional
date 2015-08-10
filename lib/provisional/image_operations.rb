@@ -76,9 +76,8 @@ private
 
   def build_server(name, base_image)
     # TODO: Need to better figure out how to handle region, size, and other options.
-    # TODO: If our base_image is private, we have to use and ID instead of a slug.
-    # TODO: We'll need to supply all the SSH keys in order to be able to SSH in as root.
-    droplet = DropletKit::Droplet.new(name: name, image: base_image, region: 'nyc3', size: '512mb')
+    # TODO: If our base_image is private, we have to use an ID instead of a slug.
+    droplet = DropletKit::Droplet.new(name: name, image: base_image, region: 'nyc3', size: '512mb', ssh_keys: all_ssh_keys)
     created = Provisional.digital_ocean.droplets.create(droplet)
     created_id = created.id
     print "Building '#{name}' from '#{base_image}'."
@@ -106,6 +105,10 @@ private
 
   def all_images
     @all_images ||= Provisional.digital_ocean.images.all.select{|image| image.type == "snapshot"}
+  end
+
+  def all_ssh_keys
+    Provisional.digital_ocean.ssh_keys.all.to_a.map(&:id)
   end
 
   def display(image)
