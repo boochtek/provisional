@@ -74,13 +74,18 @@ private
     @os_images ||= all_images.select{|image| image.public}.select{|image| image.slug =~ /-\d/ || image.slug =~ /coreos/ }
   end
 
-  def build_server(name, base_image)
+  def build_server(server_name, base_image_name)
     # TODO: Need to better figure out how to handle region, size, and other options.
-    # TODO: If our base_image is private, we have to use an ID instead of a slug.
-    droplet = DropletKit::Droplet.new(name: name, image: base_image, region: 'nyc3', size: '512mb', ssh_keys: all_ssh_keys)
-    created = Provisional.digital_ocean.droplets.create(droplet)
+    begin
+      droplet = DropletKit::Droplet.new(name: server_name, image: base_image_name, region: 'nyc3', size: '512mb', ssh_keys: all_ssh_keys)
+      created = Provisional.digital_ocean.droplets.create(droplet)
+    rescue DropletKit::FailedCreate
+      base_image_id = Provisional.digital_ocean.images.all.to_a.select{|image| image.name == base_image_name}.first.id
+      droplet = DropletKit::Droplet.new(name: server_name, image: base_image_id, region: 'nyc3', size: '512mb', ssh_keys: all_ssh_keys)
+      created = Provisional.digital_ocean.droplets.create(droplet)
+    end
     created_id = created.id
-    print "Building '#{name}' from '#{base_image}'."
+    print "Building '#{server_name}' from '#{base_image_name}'."
     $stdout.flush
     while Provisional.digital_ocean.droplets.find(id: created_id).status == "new"
       putc(".")
