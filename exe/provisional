@@ -31,7 +31,16 @@ command :image do |image|
   image.desc "List images"
   image.command :list do |image_list|
     image_list.action do |global_options, options, args|
-      Provisional::ImageList.new(global_options.merge(options)).run
+      Provisional::ImageOperations.new(global_options.merge(options)).list
+    end
+  end
+
+  image.desc "Build an image, based on another image, plus files and scripts"
+  image.arg "image_name"
+  image.command :build do |image_build|
+    image_build.action do |global_options, options, args|
+      image_name = args.first
+      Provisional::ImageOperations.new(global_options.merge(options)).build(image_name)
     end
   end
 end
