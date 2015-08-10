@@ -17,3 +17,8 @@ Scenario: Create an image
     Then the output should contain "Building"
     And the output should contain "from 'debian-8-x64'"
     And there should be a new "base" image
+
+Scenario: Uploads files to the image
+    Given a file named "config_file" in the "base" image file directory
+    When I run `provisional image build base`
+    Then the "base" image should have a file named "config_file" in "/var/tmp/provisional/files"

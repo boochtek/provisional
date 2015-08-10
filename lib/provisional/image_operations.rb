@@ -3,9 +3,11 @@ require "droplet_kit"
 
 class Provisional::ImageOperations
 
+  SSH_OPTIONS = "-o PasswordAuthentication=no -o StrictHostKeyChecking=no -o CheckHostIP=no"
+
   attr_reader :options
 
-  def initialize(options)
+  def initialize(options = {})
     @options = options
   end
 
@@ -22,11 +24,27 @@ class Provisional::ImageOperations
     base_image = base_image_for(image_name)
     name = "#{image_name}-#{Time.now.utc.strftime("%Y%m%d%H%M%S")}"
     server_id = build_server(name, base_image)
-    # transfer_files_to_server(name)
+    transfer_files_to_server(image_name, server_id)
     # run_scripts_on_server(name)
     stop_server(server_id)
     build_image_from_server(name, server_id)
     delete_server(server_id)
+  end
+
+  def transfer_files_to_server(image_name, server_id)
+    server = Provisional.digital_ocean.droplets.find(id: server_id)
+    ip_address = server.public_ip
+    wait_until_ssh_responds(ip_address)
+    %x(ssh #{SSH_OPTIONS} root@#{ip_address} mkdir -p /var/tmp/provisional)
+    %x(scp #{SSH_OPTIONS} -r #{Provisional::CONFIG_DIRECTORY}/#{image_name}/files/ root@#{ip_address}:/var/tmp/provisional/files/)
+    %x(scp #{SSH_OPTIONS} -r #{Provisional::CONFIG_DIRECTORY}/#{image_name}/scripts/ root@#{ip_address}:/var/tmp/provisional/scripts/)
+  end
+
+  def wait_until_ssh_responds(ip_address)
+    until %x(ssh #{SSH_OPTIONS} root@#{ip_address} "ls -d1 /") == "/\n"
+      puts "Waiting for SSH on #{ip_address} to respond"
+      sleep 1
+    end
   end
 
   def stop_server(id)
@@ -68,12 +86,6 @@ class Provisional::ImageOperations
     # Don't really need to wait for this one to complete.
   end
 
-private
-
-  def os_images
-    @os_images ||= all_images.select{|image| image.public}.select{|image| image.slug =~ /-\d/ || image.slug =~ /coreos/ }
-  end
-
   def build_server(server_name, base_image_name)
     # TODO: Need to better figure out how to handle region, size, and other options.
     begin
@@ -85,7 +97,7 @@ private
       created = Provisional.digital_ocean.droplets.create(droplet)
     end
     created_id = created.id
-    print "Building '#{server_name}' from '#{base_image_name}'."
+    print "Building server '#{server_name}' from image '#{base_image_name}'."
     $stdout.flush
     while Provisional.digital_ocean.droplets.find(id: created_id).status == "new"
       putc(".")
@@ -96,16 +108,22 @@ private
     return created_id
   end
 
+  def custom_images
+    @custom_images ||= all_images.select{|image| !image.public && image.name =~ /-\d{14}$/}
+  end
+
+private
+
+  def os_images
+    @os_images ||= all_images.select{|image| image.public}.select{|image| image.slug =~ /-\d/ || image.slug =~ /coreos/ }
+  end
+
   def base_image_for(image_name)
     image_config_for(image_name)["base-image"]
   end
 
   def image_config_for(image_name)
     Provisional.config["images"][image_name] or raise "No config file section for image '#{image_name}'"
-  end
-
-  def custom_images
-    @custom_images ||= all_images.select{|image| !image.public && image.name =~ /-\d{14}$/}
   end
 
   def all_images

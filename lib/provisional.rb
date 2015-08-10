@@ -7,7 +7,8 @@ require "erb"
 
 module Provisional
 
-  CONFIG_FILE = "config/infrastructure/provisional.yml"
+  CONFIG_DIRECTORY = "config/infrastructure"
+  CONFIG_FILE = "#{CONFIG_DIRECTORY}/provisional.yml"
   DEFAULT_CONFIG_FILE = File.expand_path('../../data/default_config_file.yml', __FILE__)
 
   def self.config
