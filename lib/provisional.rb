@@ -1,5 +1,7 @@
 require "provisional/version"
 require "provisional/init"
+require "provisional/image"
+require "provisional/server"
 require "provisional/image_operations"
 require "yaml"
 require "erb"
