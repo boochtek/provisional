@@ -2,16 +2,6 @@ DISTRO_IMAGES = %w[debian-8-x64 ubuntu-14-04-x64 coreos-beta]
 APP_IMAGES = %w[joomla wordpress]
 
 
-Given /^the environment variable "([^"]*)" is set$/ do |variable_name|
-  if ENV[variable_name].nil?
-    fail "You must set the #{variable_name} environment variable to run the tests."
-  end
-end
-
-Given /^the default config file$/ do
-  write_file(Provisional::CONFIG_FILE, File.read(Provisional::DEFAULT_CONFIG_FILE))
-end
-
 Given(/^a file named "([^"]*)" in the "([^"]*)" image file directory$/) do |file_name, image_name|
   file_path = "#{Provisional::CONFIG_DIRECTORY}/#{image_name}/files/#{file_name}"
   file_contents = (0...50).map { ('a'..'z').to_a[rand(26)] }.join
@@ -27,7 +17,6 @@ touch /var/tmp/#{@file_to_add_through_script}
 EOF
   write_file(file_path, file_contents)
 end
-
 
 Given /^I keep track of the image list$/ do
   @original_image_list = %x(provisional image list).split("\n")
