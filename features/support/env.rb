@@ -2,7 +2,7 @@ require "bundler/setup"
 require "aruba/cucumber"
 
 
-# Our provisioning takes a while -- the 15-second default won't cut it.
+# Provisioning can take a long time -- the 15-second default isn't even close to cutting it.
 Aruba.configure do |config|
-  config.exit_timeout = 300
+  config.exit_timeout = 600
 end
