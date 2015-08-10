@@ -3,7 +3,7 @@ require "droplet_kit"
 
 class Provisional::ImageOperations
 
-  SSH_OPTIONS = "-o PasswordAuthentication=no -o StrictHostKeyChecking=no -o CheckHostIP=no"
+  SSH_OPTIONS = "-o PasswordAuthentication=no -o StrictHostKeyChecking=no -o CheckHostIP=no -o VisualHostKey=no"
 
   attr_reader :options
 
@@ -25,7 +25,7 @@ class Provisional::ImageOperations
     name = "#{image_name}-#{Time.now.utc.strftime("%Y%m%d%H%M%S")}"
     server_id = build_server(name, base_image)
     transfer_files_to_server(image_name, server_id)
-    # run_scripts_on_server(name)
+    run_scripts_on_server(image_name, server_id)
     stop_server(server_id)
     build_image_from_server(name, server_id)
     delete_server(server_id)
@@ -36,8 +36,17 @@ class Provisional::ImageOperations
     ip_address = server.public_ip
     wait_until_ssh_responds(ip_address)
     %x(ssh #{SSH_OPTIONS} root@#{ip_address} mkdir -p /var/tmp/provisional)
-    %x(scp #{SSH_OPTIONS} -r #{Provisional::CONFIG_DIRECTORY}/#{image_name}/files/ root@#{ip_address}:/var/tmp/provisional/files/)
-    %x(scp #{SSH_OPTIONS} -r #{Provisional::CONFIG_DIRECTORY}/#{image_name}/scripts/ root@#{ip_address}:/var/tmp/provisional/scripts/)
+    %x(scp #{SSH_OPTIONS} -r #{Provisional::CONFIG_DIRECTORY}/#{image_name}/files/ root@#{ip_address}:/var/tmp/provisional/files/) if Dir.exists?("#{Provisional::CONFIG_DIRECTORY}/#{image_name}/files")
+    %x(scp #{SSH_OPTIONS} -r #{Provisional::CONFIG_DIRECTORY}/#{image_name}/scripts/ root@#{ip_address}:/var/tmp/provisional/scripts/) if Dir.exists?("#{Provisional::CONFIG_DIRECTORY}/#{image_name}/scripts")
+    %x(ssh #{SSH_OPTIONS} root@#{ip_address} chmod --silent 600 /var/tmp/provisional/files/*)
+    %x(ssh #{SSH_OPTIONS} root@#{ip_address} chmod --silent 700 /var/tmp/provisional/scripts/*)
+  end
+
+  def run_scripts_on_server(image_name, server_id)
+    server = Provisional.digital_ocean.droplets.find(id: server_id)
+    ip_address = server.public_ip
+    wait_until_ssh_responds(ip_address)
+    %x(ssh #{SSH_OPTIONS} root@#{ip_address} run-parts --regex \\'.*\\' /var/tmp/provisional/scripts/)
   end
 
   def wait_until_ssh_responds(ip_address)

@@ -22,3 +22,8 @@ Scenario: Uploads files to the image
     Given a file named "config_file" in the "base" image file directory
     When I run `provisional image build base`
     Then the "base" image should have a file named "config_file" in "/var/tmp/provisional/files"
+
+Scenario: Runs scripts on the image
+    Given a script in the "base" image script directory
+    When I run `provisional image build base`
+    Then the script should have run on the "base" image

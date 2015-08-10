@@ -18,6 +18,17 @@ Given(/^a file named "([^"]*)" in the "([^"]*)" image file directory$/) do |file
   write_file(file_path, file_contents)
 end
 
+Given(/^a script in the "([^"]*)" image script directory$/) do |image_name|
+  file_path = "#{Provisional::CONFIG_DIRECTORY}/#{image_name}/scripts/create_file.sh"
+  @file_to_add_through_script = (0...10).map { ('a'..'z').to_a[rand(26)] }.join
+  file_contents = <<"EOF"
+#!/bin/bash
+touch /var/tmp/#{@file_to_add_through_script}
+EOF
+  write_file(file_path, file_contents)
+end
+
+
 Given /^I keep track of the image list$/ do
   @original_image_list = %x(provisional image list).split("\n")
   fail "Original image list is unexpectedly empty." if @original_image_list.empty?
@@ -45,8 +56,19 @@ Then(/^the "([^"]*)" image should have a file named "([^"]*)" in "([^"]*)"$/) do
   server = build_server_from_image(image_name)
   ip_address = server.public_ip
   Provisional::ImageOperations.new.wait_until_ssh_responds(ip_address)
-  directory_listing = %x(ssh #{Provisional::ImageOperations::SSH_OPTIONS} root@#{ip_address} "ls -1 #{directory_name}").split("\n")
+  directory_listing = %x(ssh #{Provisional::ImageOperations::SSH_OPTIONS} root@#{ip_address} "ls -1 #{directory_name}/").split("\n")
   expect(directory_listing).to include(file_name)
+  Provisional::ImageOperations.new.stop_server(server.id)
+  Provisional::ImageOperations.new.delete_server(server.id)
+end
+
+Then(/^the script should have run on the "([^"]*)" image$/) do |image_name|
+  server = build_server_from_image(image_name)
+  ip_address = server.public_ip
+  Provisional::ImageOperations.new.wait_until_ssh_responds(ip_address)
+  directory_name = "/var/tmp"
+  directory_listing = %x(ssh #{Provisional::ImageOperations::SSH_OPTIONS} root@#{ip_address} "ls -1 #{directory_name}/").split("\n")
+  expect(directory_listing).to include(@file_to_add_through_script)
   Provisional::ImageOperations.new.stop_server(server.id)
   Provisional::ImageOperations.new.delete_server(server.id)
 end
@@ -73,7 +95,6 @@ end
 def build_server_from_image(image_name)
   latest_image_name = Provisional::ImageOperations.new.custom_images.map(&:name).grep(/^#{image_name}-/).sort.last
   server_name = "#{image_name}-#{Time.now.utc.strftime("%Y%m%d%H%M%S")}"
-  puts "Trying to build from image '#{latest_image_name}'"
   server_id = Provisional::ImageOperations.new.build_server(server_name, latest_image_name)
   server = Provisional.digital_ocean.droplets.find(id: server_id)
 end
