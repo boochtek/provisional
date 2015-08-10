@@ -26,7 +26,7 @@ class Provisional::ImageOperations
     # run_scripts_on_server(name)
     stop_server(server_id)
     build_image_from_server(name, server_id)
-    delete_server(name)
+    delete_server(server_id)
   end
 
   def stop_server(id)
