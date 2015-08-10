@@ -68,6 +68,15 @@ push git commits and tags, and push the `.gem` file to [RubyGems].
 6. Create a new [pull request].
 
 
+## TODO
+
+Note that this is currently a work in progress. Much remains to be done.
+
+- Refactor to put an OOP layer above the DropletKit layer.
+- Move Digital Ocean support to an adapter.
+  - Add an adapter for AWS.
+
+
 [project repo]: https://github.com/boochtek/ruby_preserves/fork
 [pull request]: https://github.com/boochtek/ruby_preserves/pulls
 [RubyGems]: https://rubygems.org
