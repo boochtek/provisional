@@ -30,7 +30,7 @@ gem install provisional
 Provisional is meant to be used from within your application development directory.
 
 ~~~ bash
-provisional init                    # Create config/provisional/config.yml
+provisional init                    # Create config/infrastructure/provisional.yml
 provisional image list              # List images (including all versions)
 provisional image create image-name # Create an image
 provisional image update image-name # Update an image (or all images)
