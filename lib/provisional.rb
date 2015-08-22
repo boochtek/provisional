@@ -12,7 +12,7 @@ module Provisional
 
   CONFIG_DIRECTORY = "config/infrastructure"
   CONFIG_FILE = "#{CONFIG_DIRECTORY}/provisional.yml"
-  DEFAULT_CONFIG_FILE = File.expand_path('../../data/default_config_file.yml', __FILE__)
+  DEFAULT_CONFIG = File.expand_path('../../data/default_config', __FILE__)
 
   def self.config
     @config ||= YAML.load(ERB.new(File.read(CONFIG_FILE)).result)
