@@ -57,6 +57,10 @@ To release a new version, update the version number in `version.rb`,
 and then run `bundle exec rake release` to create a git tag for the version,
 push git commits and tags, and push the `.gem` file to [RubyGems].
 
+To run the tests, you'll need a Digital Ocean account, with an API key generated.
+You'll have to export the key in an environment variable named `DIGITAL_OCEAN_API_KEY`.
+You can also enable extra debugging by exporting `GLI_DEBUG=true`.
+
 
 ## Contributing
 
