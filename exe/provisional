@@ -46,4 +46,20 @@ command :image do |image|
 end
 
 
+desc "Deploy servers to a given environment"
+arg_name "environment"
+command :deploy do |deploy|
+  deploy.switch "cold", desc: "Perform a cold deploy, deploying all server types"
+  deploy.action do |global_options, options, args|
+    environment = args[0]
+    options = global_options.merge(options)
+    if options[:cold]
+      Provisional::Deployment.new(environment, options).deploy_cold
+    else
+      #Provisional::Deployment.new(environment, options).deploy_warm
+    end
+  end
+end
+
+
 exit run(ARGV)

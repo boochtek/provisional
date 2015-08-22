@@ -19,7 +19,7 @@ class Provisional::Server
     server_options = { region: 'nyc3', size: '512mb', ssh_keys: all_ssh_keys }
     droplet = DropletKit::Droplet.new({name: name, image: image.id}.merge(server_options))
     server = Provisional.digital_ocean.droplets.create(droplet)
-    print "Building server '#{name}' from image '#{image.name}'."
+    print "Building server '#{name}' from image '#{image.slug || image.name}'."
     $stdout.flush
     while find(id: server.id).status == "new"
       putc(".")
@@ -27,7 +27,8 @@ class Provisional::Server
       sleep 5
     end
     puts "DONE"
-    return server
+    # Have to re-get the server, so it's populated with its IP address.
+    find(id: server.id)
   end
 
   def self.find(options = {})
@@ -35,8 +36,35 @@ class Provisional::Server
     if options[:id]
       Provisional.digital_ocean.droplets.find(id: options[:id])
     elsif options[:name]
-      all.select{|server| server.name == options[:name]}
+      all.select{|server| server.name == options[:name]}.first
     end
+  end
+
+  def self.stop(server)
+    return unless server
+    action = Provisional.digital_ocean.droplet_actions.shutdown(droplet_id: server.id)
+    action_id = action.id
+    print "Stopping server '#{server.name}' (action_id = #{action_id})."
+    until action.status == "completed" do
+      putc(".")
+      # $stdout.flush
+      sleep 1
+      action = Provisional.digital_ocean.actions.find(id: action_id)
+    end
+    # TODO: I've seen a shutdown not work, so we'll need a timeout.
+    until Provisional.digital_ocean.droplets.find(id: server.id).status == "off" do
+      putc(".")
+      $stdout.flush
+      sleep 1
+    end
+    puts "DONE"
+  end
+
+
+  def self.delete(server)
+    return unless server
+    Provisional.digital_ocean.droplets.delete(id: server.id)
+    # Don't really need to wait for this operation to complete.
   end
 
 private

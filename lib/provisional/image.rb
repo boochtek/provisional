@@ -8,7 +8,7 @@ class Provisional::Image
   end
 
   def self.all
-    Provisional.digital_ocean.images.all.select{|image| image.type == "snapshot"}
+    Provisional.digital_ocean.images.all.to_a # select{|image| image.type == "snapshot"}
   end
 
   def self.custom
@@ -21,11 +21,13 @@ class Provisional::Image
       Provisional.digital_ocean.images.find(id: id)
     elsif options[:name]
       name = options[:name]
-      if name =~ /-\d{14}/
-        all.select{|image| image.name == name}.first
-      else
-        all.select{|image| image.name =~ /#{name}-\d{14}/}.sort.last
+      image = all.select{|image| image.slug == name || image.name == name}.first
+      if image.nil?
+        image = all.select{|image| image.name =~ /#{name}-\d{14}/}.sort.last
       end
+      return image
+    else
+      raise "Don't know how to find image with that criteria"
     end
   end
 
@@ -34,6 +36,7 @@ class Provisional::Image
     if options[:name] && options[:from]
       # Create a new image from a server.
     else
+      raise "Don't know how to create image with that criteria"
     end
   end
 

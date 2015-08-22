@@ -47,8 +47,8 @@ Then(/^the "([^"]*)" image should have a file named "([^"]*)" in "([^"]*)"$/) do
   Provisional::ImageOperations.new.wait_until_ssh_responds(ip_address)
   directory_listing = %x(ssh #{Provisional::ImageOperations::SSH_OPTIONS} root@#{ip_address} "ls -1 #{directory_name}/").split("\n")
   expect(directory_listing).to include(file_name)
-  Provisional::ImageOperations.new.stop_server(server.id)
-  Provisional::ImageOperations.new.delete_server(server.id)
+  Provisional::Server.stop(server)
+  Provisional::Server.delete(server)
 end
 
 Then(/^the script should have run on the "([^"]*)" image$/) do |image_name|
@@ -58,8 +58,8 @@ Then(/^the script should have run on the "([^"]*)" image$/) do |image_name|
   directory_name = "/var/tmp"
   directory_listing = %x(ssh #{Provisional::ImageOperations::SSH_OPTIONS} root@#{ip_address} "ls -1 #{directory_name}/").split("\n")
   expect(directory_listing).to include(@file_to_add_through_script)
-  Provisional::ImageOperations.new.stop_server(server.id)
-  Provisional::ImageOperations.new.delete_server(server.id)
+  Provisional::Server.stop(server)
+  Provisional::Server.delete(server)
 end
 
 
@@ -82,8 +82,7 @@ def new_images
 end
 
 def build_server_from_image(image_name)
-  latest_image_name = Provisional::ImageOperations.new.custom_images.map(&:name).grep(/^#{image_name}-/).sort.last
+  latest_image = Provisional::Image.find(name: image_name)
   server_name = "#{image_name}-#{Time.now.utc.strftime("%Y%m%d%H%M%S")}"
-  server_id = Provisional::ImageOperations.new.build_server(server_name, latest_image_name)
-  server = Provisional.digital_ocean.droplets.find(id: server_id)
+  Provisional::Server.create(name: server_name, image: latest_image)
 end

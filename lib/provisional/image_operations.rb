@@ -21,18 +21,18 @@ class Provisional::ImageOperations
   end
 
   def build(image_name)
-    base_image = base_image_for(image_name)
+    puts "Base image for '#{image_name}' is '#{base_image_for(image_name)}'"
+    base_image = Provisional::Image.find(name: base_image_for(image_name))
     name = "#{image_name}-#{Time.now.utc.strftime("%Y%m%d%H%M%S")}"
-    server_id = build_server(name, base_image)
-    transfer_files_to_server(image_name, server_id)
-    run_scripts_on_server(image_name, server_id)
-    stop_server(server_id)
-    build_image_from_server(name, server_id)
-    delete_server(server_id)
+    server = Provisional::Server.create(name: name, image: base_image)
+    transfer_files_to_server(image_name, server)
+    run_scripts_on_server(image_name, server)
+    Provisional::Server.stop(server)
+    build_image_from_server(name, server.id)
+    Provisional::Server.delete(server)
   end
 
-  def transfer_files_to_server(image_name, server_id)
-    server = Provisional.digital_ocean.droplets.find(id: server_id)
+  def transfer_files_to_server(image_name, server)
     ip_address = server.public_ip
     wait_until_ssh_responds(ip_address)
     %x(ssh #{SSH_OPTIONS} root@#{ip_address} mkdir -p /var/tmp/provisional)
@@ -42,8 +42,7 @@ class Provisional::ImageOperations
     %x(ssh #{SSH_OPTIONS} root@#{ip_address} chmod --silent 700 /var/tmp/provisional/scripts/*)
   end
 
-  def run_scripts_on_server(image_name, server_id)
-    server = Provisional.digital_ocean.droplets.find(id: server_id)
+  def run_scripts_on_server(image_name, server)
     ip_address = server.public_ip
     wait_until_ssh_responds(ip_address)
     %x(ssh #{SSH_OPTIONS} root@#{ip_address} run-parts --regex \\'.*\\' /var/tmp/provisional/scripts/)
@@ -54,25 +53,6 @@ class Provisional::ImageOperations
       puts "Waiting for SSH on #{ip_address} to respond"
       sleep 1
     end
-  end
-
-  def stop_server(id)
-    action = Provisional.digital_ocean.droplet_actions.shutdown(droplet_id: id)
-    action_id = action.id
-    print "Stopping server '#{id}' (action_id = #{action_id})."
-    until action.status == "completed" do
-      putc(".")
-      # $stdout.flush
-      sleep 1
-      action = Provisional.digital_ocean.actions.find(id: action_id)
-    end
-    # TODO: I've seen a shotdown not work, so we'll need a timeout.
-    until Provisional.digital_ocean.droplets.find(id: id).status == "off" do
-      putc(".")
-      $stdout.flush
-      sleep 1
-    end
-    puts "DONE"
   end
 
   def build_image_from_server(name, id)
@@ -90,35 +70,12 @@ class Provisional::ImageOperations
     puts "DONE"
   end
 
-  def delete_server(id)
-    Provisional.digital_ocean.droplets.delete(id: id)
-    # Don't really need to wait for this one to complete.
-  end
-
-  def build_server(server_name, base_image_name)
-    # TODO: Need to better figure out how to handle region, size, and other options.
-    begin
-      droplet = DropletKit::Droplet.new(name: server_name, image: base_image_name, region: 'nyc3', size: '512mb', ssh_keys: all_ssh_keys)
-      created = Provisional.digital_ocean.droplets.create(droplet)
-    rescue DropletKit::FailedCreate
-      base_image_id = Provisional.digital_ocean.images.all.to_a.select{|image| image.name == base_image_name}.first.id
-      droplet = DropletKit::Droplet.new(name: server_name, image: base_image_id, region: 'nyc3', size: '512mb', ssh_keys: all_ssh_keys)
-      created = Provisional.digital_ocean.droplets.create(droplet)
-    end
-    created_id = created.id
-    print "Building server '#{server_name}' from image '#{base_image_name}'."
-    $stdout.flush
-    while Provisional.digital_ocean.droplets.find(id: created_id).status == "new"
-      putc(".")
-      $stdout.flush
-      sleep 5
-    end
-    puts "DONE"
-    return created_id
-  end
-
   def custom_images
     @custom_images ||= all_images.select{|image| !image.public && image.name =~ /-\d{14}$/}
+  end
+
+  def all_images
+    @all_images ||= Provisional.digital_ocean.images.all.select{|image| image.type == "snapshot"}
   end
 
 private
@@ -133,14 +90,6 @@ private
 
   def image_config_for(image_name)
     Provisional.config["images"][image_name] or raise "No config file section for image '#{image_name}'"
-  end
-
-  def all_images
-    @all_images ||= Provisional.digital_ocean.images.all.select{|image| image.type == "snapshot"}
-  end
-
-  def all_ssh_keys
-    Provisional.digital_ocean.ssh_keys.all.to_a.map(&:id)
   end
 
   def display(image)
