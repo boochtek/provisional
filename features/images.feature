@@ -15,7 +15,7 @@ Scenario: Create an image
     Given I keep track of the image list
     When I run `provisional image build base`
     Then the output should contain "Building"
-    And the output should contain "from 'debian-8-x64'"
+    And the output should contain "from image 'debian-8-x64'"
     And there should be a new "base" image
 
 Scenario: Uploads files to the image
